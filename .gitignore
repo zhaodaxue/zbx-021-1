@@ -31,3 +31,6 @@ dist-ssr
 # Database
 *.db
 *.sqlite
+
+# Test coverage
+coverage
