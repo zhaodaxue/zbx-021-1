@@ -1,15 +1,34 @@
 import { useAppStore } from '../store/useAppStore';
 import GunCard from '../components/GunCard';
 import { Snowflake, AlertTriangle, CheckCircle, Activity } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 export default function Dashboard() {
-  const { slopeGroups, defrostTodos, recoveryTodos, loading } = useAppStore();
+  const { slopeGroups, defrostTodos, recoveryTodos, loading, highlightedGunId, setHighlightedGun } = useAppStore();
+  const cardRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
   const totalGuns = slopeGroups.reduce((sum, g) => sum + g.guns.length, 0);
   const normalGuns = slopeGroups.reduce(
     (sum, g) => sum + g.guns.filter(gun => gun.status === 'normal').length,
     0
   );
+
+  useEffect(() => {
+    if (highlightedGunId) {
+      const cardEl = cardRefs.current.get(highlightedGunId);
+      if (cardEl) {
+        cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [highlightedGunId, slopeGroups]);
+
+  useEffect(() => {
+    if (!highlightedGunId) return;
+    const gun = slopeGroups.flatMap(g => g.guns).find(g => g.id === highlightedGunId);
+    if (gun && gun.status !== 'defrost_required') {
+      setHighlightedGun(null);
+    }
+  }, [slopeGroups, highlightedGunId, setHighlightedGun]);
 
   if (loading && slopeGroups.length === 0) {
     return (
@@ -93,7 +112,12 @@ export default function Dashboard() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {group.guns.map(gun => (
-              <GunCard key={gun.id} gun={gun} />
+              <div
+                key={gun.id}
+                ref={(el) => { cardRefs.current.set(gun.id, el); }}
+              >
+                <GunCard gun={gun} highlighted={highlightedGunId === gun.id} />
+              </div>
             ))}
           </div>
         </div>

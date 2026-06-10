@@ -16,7 +16,7 @@ import { api } from '../api/client';
 import { useAppStore } from '../store/useAppStore';
 import { SnowGun, SensorRecord, ShutdownRecord, FROST_LEVEL_COLORS, FROST_LEVEL_LABELS, GUN_STATUS_LABELS } from '../../shared/types.js';
 import { formatDateTime, formatDuration, getRelativeTime } from '../utils/format';
-import { ArrowLeft, Gauge, ThermometerSnowflake, Clock, AlertTriangle, CheckCircle, PlayCircle, MapPin } from 'lucide-react';
+import { ArrowLeft, Gauge, ThermometerSnowflake, Clock, AlertTriangle, CheckCircle, PlayCircle, MapPin, X, ExternalLink } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 ChartJS.register(
@@ -33,7 +33,15 @@ ChartJS.register(
 export default function GunDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getGunById, loading: storeLoading, slopeGroups } = useAppStore();
+  const {
+    getGunById,
+    loading: storeLoading,
+    slopeGroups,
+    newAlerts,
+    dismissedDetailGunIds,
+    dismissDetailAlert,
+    defrostTodos,
+  } = useAppStore();
   const [gun, setGun] = useState<SnowGun | null | undefined>(undefined);
   const [sensorRecords, setSensorRecords] = useState<SensorRecord[]>([]);
   const [shutdownRecords, setShutdownRecords] = useState<ShutdownRecord[]>([]);
@@ -166,6 +174,20 @@ export default function GunDetail() {
 
   const handleGoBack = () => navigate(-1);
 
+  const currentGunAlert = newAlerts.find(a => a.gunId === id);
+  const currentGunTodo = defrostTodos.find(t => t.id === id);
+  const showDetailAlert = isDefrostRequired && currentGunAlert && !dismissedDetailGunIds.has(id || '');
+
+  const handleDismissAlert = () => {
+    if (id) {
+      dismissDetailAlert(id);
+    }
+  };
+
+  const handleGoToTodo = () => {
+    navigate('/todo');
+  };
+
   return (
     <div>
       <button
@@ -175,6 +197,45 @@ export default function GunDetail() {
         <ArrowLeft className="w-4 h-4" />
         返回
       </button>
+
+      {showDetailAlert && currentGunAlert && (
+        <div className="mb-6 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-2xl p-5 shadow-lg shadow-red-200 animate-pulse-slow">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg mb-1">该枪刚进入需融霜状态</h3>
+                <p className="text-red-100 text-sm mb-2">
+                  <span className="font-medium">触发原因：</span>
+                  {currentGunAlert.triggerReason || currentGunTodo?.triggerReason || '未知原因'}
+                </p>
+                <p className="text-red-200 text-xs">
+                  触发时间：{formatDateTime(currentGunAlert.shutdownAt)}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={handleGoToTodo}
+                className="px-4 py-2 bg-white text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors flex items-center gap-1.5"
+              >
+                <ExternalLink className="w-4 h-4" />
+                跳转待办
+              </button>
+              <button
+                onClick={handleDismissAlert}
+                className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5"
+                title="稍后处理"
+              >
+                <X className="w-4 h-4" />
+                稍后处理
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className={cn(
         'bg-white rounded-2xl border-2 p-6 mb-6',

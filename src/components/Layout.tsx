@@ -3,6 +3,7 @@ import { LayoutDashboard, Snowflake, AlertTriangle, PlayCircle, RefreshCw } from
 import { useAppStore } from '../store/useAppStore';
 import { useEffect } from 'react';
 import { formatTime } from '../utils/format';
+import AlertBar from './AlertBar';
 
 const navItems = [
   { path: '/', label: '坡道看板', icon: LayoutDashboard },
@@ -85,8 +86,9 @@ export default function Layout() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto">
-        <div className="p-8">
+      <main className="flex-1 overflow-auto flex flex-col">
+        <AlertBar />
+        <div className="flex-1 p-8">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               ⚠️ {error}

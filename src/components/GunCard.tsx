@@ -3,12 +3,15 @@ import { SnowGun, GUN_STATUS_LABELS, FROST_LEVEL_COLORS, FROST_LEVEL_LABELS } fr
 import { getRelativeTime } from '../utils/format';
 import { Gauge, ThermometerSnowflake, Clock, AlertTriangle, CheckCircle, ArrowRight } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useAppStore } from '../store/useAppStore';
 
 interface GunCardProps {
   gun: SnowGun;
+  highlighted?: boolean;
 }
 
-export default function GunCard({ gun }: GunCardProps) {
+export default function GunCard({ gun, highlighted }: GunCardProps) {
+  const { setHighlightedGun } = useAppStore();
   const isDefrostRequired = gun.status === 'defrost_required';
   const isDefrostCompleted = gun.status === 'defrost_completed';
   const isLowPressure = gun.currentWaterPressure !== undefined && gun.currentWaterPressure < gun.minWaterPressure;
@@ -19,16 +22,24 @@ export default function GunCard({ gun }: GunCardProps) {
     ? 'bg-amber-500 text-white'
     : 'bg-green-500 text-white';
 
+  const handleClick = () => {
+    if (highlighted) {
+      setHighlightedGun(null);
+    }
+  };
+
   return (
     <Link
       to={`/gun/${gun.id}`}
+      onClick={handleClick}
       className={cn(
         'block relative bg-white rounded-2xl border-2 p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1',
         isDefrostRequired
           ? 'border-red-400 shadow-lg shadow-red-100 animate-pulse-slow'
           : isDefrostCompleted
           ? 'border-amber-400 shadow-lg shadow-amber-100'
-          : 'border-slate-200 hover:border-blue-300'
+          : 'border-slate-200 hover:border-blue-300',
+        highlighted && 'ring-4 ring-blue-400 ring-offset-2 scale-[1.02] shadow-2xl z-10'
       )}
     >
       {isDefrostRequired && (
